@@ -83,11 +83,17 @@ median_weekly_spc <- function (spc, date, tz = "UTC", numcol = NA){
   return(weekly_median)
 }
 
-fingerprint <- function(spc_0, spc_1, numcol = NA){
+fingerprint <- function(spc_0, spc_1, numcol = NA, type = "%"){
 
-  if( is.na(numcol[1])) suppressWarnings( fp <- data.frame(t(apply(spc_1, 1, function(x) as.numeric(log10( spc_0 / x))))))
+  if(type == "log"){
+    if( is.na(numcol[1])) suppressWarnings( fp <- data.frame(t(apply(spc_1, 1, function(x) as.numeric(log10( spc_0 / x))))))
+    if( !is.na(numcol[1])) suppressWarnings( fp <- data.frame(t(apply(spc_1[ , numcol$numcol, with = F], 1, function(x) as.numeric(log10( spc_0 / x))))) )
+  }
 
-  if( !is.na(numcol[1])) suppressWarnings( fp <- data.frame(t(apply(spc_1[ , numcol$numcol, with = F], 1, function(x) as.numeric(log10( spc_0 / x))))) )
+  if(type == "%"){
+    if( is.na(numcol[1])) suppressWarnings( fp <- data.frame(t(apply(spc_1, 1, function(x) as.numeric( (1 - x / spc_0) * 100)))))
+    if( !is.na(numcol[1])) suppressWarnings( fp <- data.frame(t(apply(spc_1[ , numcol$numcol, with = F], 1, function(x) as.numeric( (1 - x / spc_0) * 100)))))
+  }
 
   if( is.na(numcol[1])) colnames(fp) <- colnames(spc_1)
   if( !is.na(numcol[1])) colnames(fp) <- colnames(spc_1)[ numcol$numcol ]
