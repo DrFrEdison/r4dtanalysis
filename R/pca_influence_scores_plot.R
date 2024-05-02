@@ -1,8 +1,44 @@
+scores_plot <- function( pca.input
+                         , ncomp = 1
+                         , png = F
+                         , plot = T
+                         , pngtext = NA
+                         , col = NA
+                         , return = T){
+
+  if(is.na(col)) col = "black"
+  if( is.na( pngtext )) pngtext <- ""
+
+  PCx <- pca.input$calres$scores[ , ncomp[ 1 ]]
+  PCy <- pca.input$calres$scores[ , ncomp[ 2 ]]
+
+  if( png ) png(paste0("Scores_Plot_"
+                       , pngtext, ".png")
+                ,xxx<-4800,xxx/16*9,"px",12,"white",res=500,"sans",T,"cairo")
+
+  if( plot ){
+    plot( PCx, PCy
+          , xlab = ""
+          , ylab = ""
+          , main = paste("Scores Plot")
+          , col = col, type = "n")
+    abline(h = 0, v = 0, lty = 3, col = "grey")
+    points(PCx, PCy)
+    mtext(paste0("PC", ncomp[ 1 ], ", Erklärte Varianz ", round(pca.input$calres$expvar[ ncomp [ 1 ]], 2), " %")
+          , 1, 2.5, cex = .65, font = 2)
+    mtext(paste0("PC", ncomp[ 2 ], ", Erklärte Varianz ", round(pca.input$calres$expvar[ ncomp [ 2 ]], 2), " %")
+          , 2, 2.5, cex = .65, font = 2)
+
+  }
+
+  if(png) dev.off()
+  if(return) return(valid.vector)
+}
+
 influence_plot <- function( pca.input
                             , T2lim = c(1,2)
                             , Qlim = c(1,2)
                             , ncomp = 1
-                            , legendtext
                             , png = F
                             , plot = T
                             , pngtext = NA
@@ -35,7 +71,7 @@ influence_plot <- function( pca.input
     plot( T2, Q, xlim = xlim, ylim = ylim
           , xlab = ""
           , ylab = ""
-          , main = paste("Influence Plot, PC", ncomp, pngtext)
+          , main = paste("Influence Plot, PC", ncomp)
           , col = col)
     mtext(paste0("Hotelling's T2, PC ", ncomp)
           , 1, 2.5, cex = .65, font = 2)

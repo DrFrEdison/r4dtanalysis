@@ -1,20 +1,66 @@
-kb_AI <- function(p.u
-                  , pca.reference
+kb_AI <- function(pca.reference
                   , spc.dat
                   , limit.PC = 1
                   , limit.level = 2
-                  , lambda
-                  , ncomp
-                  , pred.analysis
-                  , colp
-                  , beverage
-                  , location
-                  , line
-                  , pl
-                  , parameter
-                  , plot
-                  , scaling_factor = 10
+                  , scaling_factor = 25
                   , conf.lim = .95){
+
+  dat <- list()
+  dat$pca.prediction <- predict(pca.reference, spc.dat)
+  dat$ellipse <- ellipse.dt(x1 = pca.reference$calres$scores[ , ncomp[ 1 ]]
+                            , y1 = pca.reference$calres$scores[ , ncomp[ 2 ]]
+                            , conf.lim = conf.lim, scaling_factor = scaling_factor
+                            , col = "black", lwd = 1.5, plot = F)
+  dat$point_outside_ellipse <- mapply(function(x1, y1) point_outside_ellipse(point = c(x1
+                                                                                       , y1)
+                                                                             , ellipse_info = dat$ellipse)
+                                      , x1 = dat$pca.prediction$scores[ , ncomp[ 1 ]]
+                                      , y1 = dat$pca.prediction$scores[ , ncomp[ 2 ]]
+                                      , SIMPLIFY = F)
+  dat$point_outside_ellipse <- unlist( dat$point_outside_ellipse)
+
+  suspicious.influence.ellipse <- c(which(dat$pca.prediction$T2[ , limit.PC] > pca.reference$T2lim[limit.level, limit.PC])
+                                    , which(dat$pca.prediction$Q[ , limit.PC] > pca.reference$Qlim[limit.level, limit.PC])
+                                    , unlist( dat$point_outside_ellipse))
+  suspicious.influence.ellipse <- unique( suspicious.influence.ellipse )
+
+  warning.influence.ellipse <- c(which(dat$pca.prediction$T2[ , limit.PC] > pca.reference$T2lim[limit.level, limit.PC] & dat$point_outside_ellipse)
+                                 , which(dat$pca.prediction$Q[ , limit.PC] > pca.reference$Qlim[limit.level, limit.PC] & dat$point_outside_ellipse))
+  warning.influence.ellipse <- unique( warning.influence.ellipse )
+
+  alarm.influence.ellipse <- c(which(dat$pca.prediction$T2[ , limit.PC] > pca.reference$T2lim[limit.level, limit.PC] &
+                                       dat$pca.prediction$Q[ , limit.PC] > pca.reference$Qlim[limit.level, limit.PC] &
+                                       dat$point_outside_ellipse)
+                               , which(dat$pca.prediction$T2[ , limit.PC] > pca.reference$T2lim[limit.level, limit.PC] &
+                                         dat$pca.prediction$Q[ , limit.PC] > pca.reference$Qlim[limit.level, limit.PC]))
+  alarm.influence.ellipse <- unique( alarm.influence.ellipse )
+
+  suspicious.influence.ellipse <- suspicious.influence.ellipse[ !suspicious.influence.ellipse %in% alarm.influence.ellipse]
+  suspicious.influence.ellipse <- suspicious.influence.ellipse[ !suspicious.influence.ellipse %in% warning.influence.ellipse]
+  warning.influence.ellipse <- warning.influence.ellipse[ !warning.influence.ellipse %in% alarm.influence.ellipse]
+
+  returnp <- list(alarm.influence.ellipse, warning.influence.ellipse, suspicious.influence.ellipse, dat$ellipse, dat$pca.prediction)
+  names(returnp) <- c("alarm", "warning", "suspicious", "ellipse", "pca")
+  return(returnp)
+}
+
+kb_AI.test <- function(p.u
+                       , pca.reference
+                       , spc.dat
+                       , limit.PC = 1
+                       , limit.level = 2
+                       , lambda
+                       , ncomp
+                       , pred.analysis
+                       , colp
+                       , beverage
+                       , location
+                       , line
+                       , pl
+                       , parameter
+                       , plot
+                       , scaling_factor = 10
+                       , conf.lim = .95){
 
   # p.u = Produktion, die untersucht wird
   # p.b = Produktion, die als Basis dient
@@ -51,21 +97,21 @@ kb_AI <- function(p.u
                                                , y1 = dat$pca.prediction[[ p.u ]]$scores[ , ncomp[ 2 ]]
                                                , SIMPLIFY = F)
 
-  warning.influence <- which(dat$pca.prediction[[ p.u ]]$T2[ , limit.PC] > pca.reference$T2lim[limit.level, limit.PC] |
-                               dat$pca.prediction[[ p.u ]]$Q[ , limit.PC] > pca.reference$Qlim[limit.level, limit.PC])
-  outlier.influence <- which(dat$pca.prediction[[ p.u ]]$T2[ , limit.PC] > pca.reference$T2lim[limit.level, limit.PC] &
-                               dat$pca.prediction[[ p.u ]]$Q[ , limit.PC] > pca.reference$Qlim[limit.level, limit.PC])
+  warning.influence.ellipse <- which(dat$pca.prediction[[ p.u ]]$T2[ , limit.PC] > pca.reference$T2lim[limit.level, limit.PC] |
+                                       dat$pca.prediction[[ p.u ]]$Q[ , limit.PC] > pca.reference$Qlim[limit.level, limit.PC])
+  alarm.influence.ellipse <- which(dat$pca.prediction[[ p.u ]]$T2[ , limit.PC] > pca.reference$T2lim[limit.level, limit.PC] &
+                                     dat$pca.prediction[[ p.u ]]$Q[ , limit.PC] > pca.reference$Qlim[limit.level, limit.PC])
 
-  warning.influence <- warning.influence[ warning.influence %in% which(unlist( dat$point_outside_ellipse[[ p.u ]])) ]
-  outlier.influence <- outlier.influence[ outlier.influence %in% which(unlist( dat$point_outside_ellipse[[ p.u ]])) ]
+  warning.influence.ellipse <- warning.influence.ellipse[ warning.influence.ellipse %in% which(unlist( dat$point_outside_ellipse[[ p.u ]])) ]
+  alarm.influence.ellipse <- alarm.influence.ellipse[ alarm.influence.ellipse %in% which(unlist( dat$point_outside_ellipse[[ p.u ]])) ]
 
   if(plot){
     colp.prod <- rep(colp[ p.u ], nrow(spc.analysis))
-    colp.prod[ warning.influence ] <- "black"
-    colp.prod[ outlier.influence ] <- "black"
+    colp.prod[ warning.influence.ellipse ] <- "black"
+    colp.prod[ alarm.influence.ellipse ] <- "black"
     pch.prod <- rep(1, nrow(spc.analysis))
-    pch.prod[ warning.influence ] <- pchp.warning
-    pch.prod[ outlier.influence ] <- pchp.alarm
+    pch.prod[ warning.influence.ellipse ] <- pchp.warning
+    pch.prod[ alarm.influence.ellipse ] <- pchp.alarm
 
     png(pngname <- paste0(paste(beverage, location, line, "Produktion"
                                 , formatC(p.u, width = 3, format = "d", flag = "0"), "Analyse.png", sep = "_"))
@@ -196,10 +242,10 @@ kb_AI <- function(p.u
     dev.off()
   }
 
-  return(outlier.influence)
+  return(alarm.influence.ellipse)
 }
 
-ellipse.dt <- function(x1, y1, conf.lim = 0.99, scaling_factor = 3, col = "black", lty = 3, lwd = 1, plot = T){
+ellipse.dt <- function(x1, y1, conf.lim = 0.95, scaling_factor = 5, col = "black", lty = 3, lwd = 1, plot = T){
 
   x1 <- as.numeric(x1)
   y1 <- as.numeric(y1)
