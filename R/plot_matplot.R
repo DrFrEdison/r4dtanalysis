@@ -3,7 +3,7 @@ matplot.r4dt <- function(spc
                          , derivative = "spc"
                          , xlab = lambda
                          , ylab = NA
-                         , seqp = ifelse(nrow(spc) > 1000, round(nrow(spc) / 800, 0), 1)
+                         , seqp = 1
                          , lty = 1
                          , type = "l"
                          , main = ""
