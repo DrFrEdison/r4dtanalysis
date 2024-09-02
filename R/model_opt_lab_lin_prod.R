@@ -26,6 +26,7 @@ model_opt_lab_lin_prod_modellist <- function( model.trs = dt$model$trs
 
   seqp <- do.call( c, seqp)
 
+  dt <- list()
   dt$var.model$names <- list()
   for(i in 1 : length( columns)) dt$var.model$names[[ i ]] <- paste0( columns[[ i ]], "_", levellist[[ i ]])
 
