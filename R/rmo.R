@@ -3,7 +3,8 @@ rmo.prediction <- function( model.ID = dt$mop$model_choose
                             , model.list = dt$rmo$var
                             , substance = dt$choose$substance
                             , prod.dat
-                            , lin.dat = dt$lin$trs){
+                            , lin.dat = dt$lin$trs
+                            , SOLL = 100){
 
   model.filter <- model.filter[ model.filter$ID == model.ID , ]
 
@@ -32,8 +33,8 @@ rmo.prediction <- function( model.ID = dt$mop$model_choose
                                        , derivative = model.filter$spc
                                        , csv_transfered = lin.dat)
 
-  bias.prod <- lapply( pred.prod, function( x ) bias( median( x, na.rm = T), 0, dt$choose$SOLL, LG = 3))
-  bias.lin <- bias( median( pred.lin, na.rm = T), 0, median( lin.dat$data[ , substance]), LG = 3)
+  bias.prod <-  bias( median( pred.prod, na.rm = T), 0, SOLL, LG = 3)
+  bias.lin <- bias( median( pred.lin, na.rm = T), 0, median( lin.dat$data[ , get(substance)]), LG = 3)
 
   returnlist <- list( pred.prod, pred.lin, bias.prod, bias.lin)
   names( returnlist ) <- c("pred.prod", "pred.lin", "bias.prod", "bias.lin")
